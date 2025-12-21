@@ -130,7 +130,7 @@ export default function ExpensePage() {
     try {
       await api.patch(`/expense/${editId}`, {
         amount: Number(editAmount),
-        category_id: editCategoryId || null,
+        category_id: parseInt(editCategoryId) || null,
         note: editNote,
       });
 
