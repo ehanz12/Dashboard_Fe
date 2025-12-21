@@ -51,6 +51,12 @@ export default function Navbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-6">
           <button
+            className={isActive("/expenses")}
+            onClick={() => navigate("/expenses")}
+          >
+            Expense
+          </button>
+          <button
             className={isActive("/todos")}
             onClick={() => navigate("/todos")}
           >
@@ -76,6 +82,15 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {open && (
         <div className="md:hidden bg-white border-t px-4 py-3 space-y-3">
+          <button
+            className={`block w-full text-left ${isActive("/expenses")}`}
+            onClick={() => {
+              navigate("/expenses");
+              setOpen(false);
+            }}
+          >
+            Expense
+          </button>
           <button
             className={`block w-full text-left ${isActive("/todos")}`}
             onClick={() => {
