@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { Menu, X } from "lucide-react";
+import api, {clearAccessToken} from "../services/api"
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -18,15 +19,24 @@ export default function Navbar() {
       cancelButtonColor: "#d33",
       confirmButtonText: "Ya, Logout!",
       cancelButtonText: "Batal",
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        localStorage.removeItem("token");
+        try {
+          await api.post("/auth/logout"); // ⬅️ HAPUS COOKIE
+        } catch (e) {
+          // optional: ignore error
+        }
+
+        clearAccessToken(); // ⬅️ hapus access token di memory
+        localStorage.removeItem("isAuth")
+
         Swal.fire({
           title: "Berhasil Logout!",
           icon: "success",
           timer: 1200,
           showConfirmButton: false,
         });
+
         navigate("/login");
       }
     });

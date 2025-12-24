@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../services/api";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/solid";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,30 +12,35 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+const submit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const res = await api.post("/login", { email, password });
-      localStorage.setItem("token", res.data.token);
+  try {
+    const res = await api.post("/login", { email, password });
 
-      Swal.fire({
-        icon: "success",
-        title: "Welcome Back 👋",
-        text: "Login berhasil",
-        timer: 1400,
-        showConfirmButton: false,
-      });
+    login(res.data.access_token);
 
-      navigate("/", { replace: true });
-    } catch {
-      Swal.fire("Login gagal", "Email atau password salah", "error");
-    } finally {
-      setLoading(false);
-    }
-  };
+    Swal.fire({
+      icon: "success",
+      title: "Welcome Back 👋",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+
+    navigate("/", { replace: true });
+  } catch (err) {
+    Swal.fire(
+      "Login gagal",
+      err.response?.data?.error || "Email atau password salah",
+      "error"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen grid md:grid-cols-2 bg-gray-100">
@@ -56,19 +62,13 @@ export default function Login() {
       {/* RIGHT - LOGIN */}
       <div className="flex items-center justify-center px-6">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
-            Sign In
-          </h2>
-          <p className="text-gray-500 mb-8">
-            Masuk ke personal dashboard kamu
-          </p>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Sign In</h2>
+          <p className="text-gray-500 mb-8">Masuk ke personal dashboard kamu</p>
 
           <form onSubmit={submit} className="space-y-6">
             {/* Email */}
             <div>
-              <label className="text-sm font-medium text-gray-600">
-                Email
-              </label>
+              <label className="text-sm font-medium text-gray-600">Email</label>
               <input
                 type="email"
                 className="mt-2 w-full px-4 py-3 rounded-xl border focus:ring-2 focus:ring-indigo-500 focus:outline-none"

@@ -6,6 +6,7 @@ import Swal from "sweetalert2";
 export default function ExpensePage() {
   const [expenses, setExpenses] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // ===== ADD EXPENSE =====
   const [amount, setAmount] = useState("");
@@ -24,13 +25,23 @@ export default function ExpensePage() {
 
   // ================= FETCH =================
   const fetchExpenses = async () => {
-    const res = await api.get("/expense/");
-    setExpenses(res.data.data);
+    try {
+      setLoading(true);
+      const res = await api.get("/expense/");
+      setExpenses(res.data.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchCategories = async () => {
-    const res = await api.get("/category/");
-    setCategories(res.data.data);
+    try {
+      setLoading(true);
+      const res = await api.get("/category/");
+      setCategories(res.data.data);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -45,16 +56,17 @@ export default function ExpensePage() {
     }
 
     try {
-      await api.post("/expense/", {
-        amount: parseFloat(amount),
+      const res = await api.post("/expense/", {
+        amount: Number(amount),
         category_id: parseInt(categoryId) || null,
-        note : note,
+        note,
       });
 
+      setExpenses((prev) => [res.data.data, ...prev]); // 🔥
       setAmount("");
       setCategoryId("");
       setNote("");
-      fetchExpenses();
+
       Swal.fire("Expense ditambahkan!", "", "success");
     } catch {
       Swal.fire("Gagal menambah expense", "", "error");
@@ -128,14 +140,17 @@ export default function ExpensePage() {
   // ================= UPDATE EXPENSE =================
   const handleUpdateExpense = async () => {
     try {
-      await api.patch(`/expense/${editId}`, {
+      const res = await api.patch(`/expense/${editId}`, {
         amount: Number(editAmount),
         category_id: parseInt(editCategoryId) || null,
         note: editNote,
       });
 
+      setExpenses((prev) =>
+        prev.map((e) => (e.id === editId ? res.data.data : e))
+      ); // 🔥
+
       setShowModal(false);
-      fetchExpenses();
       Swal.fire("Expense diupdate!", "", "success");
     } catch {
       Swal.fire("Gagal update expense", "", "error");
@@ -242,36 +257,49 @@ export default function ExpensePage() {
                 <th className="p-3">Action</th>
               </tr>
             </thead>
-
             <tbody>
-              {expenses.map((exp) => (
-                <tr key={exp.id} className="border-b">
-                  <td className="p-3">
-                    {new Date(exp.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="p-3">
-                    {exp.category ? exp.category.name : "-"}
-                  </td>
-                  <td className="p-3 text-right text-red-600 font-semibold">
-                    Rp {Number(exp.amount).toLocaleString("id-ID")}
-                  </td>
-                  <td className="p-3">{exp.note}</td>
-                  <td className="p-3 space-x-2">
-                    <button
-                      onClick={() => openEditModal(exp)}
-                      className="px-3 py-1 bg-yellow-400 text-white rounded"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteExpense(exp.id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded"
-                    >
-                      Delete
-                    </button>
+              {loading ? (
+                [...Array(5)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="p-3 bg-gray-100" colSpan={5}></td>
+                  </tr>
+                ))
+              ) : expenses.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center p-6 text-gray-400">
+                    Belum ada expense
                   </td>
                 </tr>
-              ))}
+              ) : (
+                expenses.map((exp) => (
+                  <tr key={exp.id} className="border-b">
+                    <td className="p-3">
+                      {new Date(exp.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="p-3">
+                      {exp.category ? exp.category.name : "-"}
+                    </td>
+                    <td className="p-3 text-right text-red-600 font-semibold">
+                      Rp {Number(exp.amount).toLocaleString("id-ID")}
+                    </td>
+                    <td className="p-3">{exp.note}</td>
+                    <td className="p-3 space-x-2">
+                      <button
+                        onClick={() => openEditModal(exp)}
+                        className="px-3 py-1 bg-yellow-400 text-white rounded"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExpense(exp.id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
